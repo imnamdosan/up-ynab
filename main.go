@@ -1,32 +1,58 @@
 package main
 
 import (
+	"UpYnab/types"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
+	"strconv"
 
 	"github.com/joho/godotenv"
 )
 
-const UpUrl = "https://api.up.com.au/api/v1/util/ping"
+const UpBaseUrl = "https://api.up.com.au/api/v1/"
+const PageSize = 30
 
 var UP_PAT string
 var YNAB_PAT string
 
-type Meta struct {
-	Id     string `json:"id"`
-	Status string `json:"statusEmoji"`
+func accounts() error {
+	req, err := http.NewRequest("GET", UpBaseUrl+"accounts", nil)
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("Authorization", "Bearer "+UP_PAT)
+	query := req.URL.Query()
+	query.Set("page", strconv.Itoa(PageSize))
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("/accounts request failed: %s", resp.Status)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("failed to read body: %w", err)
+	}
+
+	var accResp types.AccountsResponse
+	if err = json.Unmarshal(body, &accResp); err != nil {
+		return fmt.Errorf("failed to deserialize accResp: %w", err)
+	}
+	fmt.Println(accResp)
+	return nil
 }
 
-type UpResponse struct {
-	Meta Meta `json:"meta"`
-}
-
-func doctor() error {
-	fmt.Println("doctor ran")
-	req, err := http.NewRequest("GET", UpUrl, nil)
+func ping() error {
+	req, err := http.NewRequest("GET", UpBaseUrl+"util/ping", nil)
 	if err != nil {
 		return err
 	}
@@ -44,15 +70,21 @@ func doctor() error {
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return fmt.Errorf("failed to deserialize body: %w", err)
+		return fmt.Errorf("failed to read body: %w", err)
 	}
 
-	var upResp UpResponse
+	var upResp types.PingResponse
 	if err = json.Unmarshal(body, &upResp); err != nil {
 		return fmt.Errorf("failed to deserialize upResp: %w", err)
 	}
 	fmt.Println(upResp.Meta.Id)
 	return nil
+}
+
+func doctor() error {
+	fmt.Println("doctor ran")
+	err := accounts()
+	return err
 }
 
 func loadSecrets() error {
