@@ -12,14 +12,24 @@ import (
 const UpBaseUrl = "https://api.up.com.au/api/v1/"
 
 type Client struct {
-	token string
-	http  *http.Client
+	token   string
+	http    *http.Client
+	baseUrl string
 }
 
 func NewClient(token string, httpClient *http.Client) Client {
 	return Client{
-		token: token,
-		http:  httpClient,
+		token:   token,
+		http:    httpClient,
+		baseUrl: UpBaseUrl,
+	}
+}
+
+func NewClientWithBaseUrl(token string, httpClient *http.Client, baseUrl string) Client {
+	return Client{
+		token:   token,
+		http:    httpClient,
+		baseUrl: baseUrl,
 	}
 }
 
@@ -48,7 +58,7 @@ func (c Client) Get(ctx context.Context, url string, result any) error {
 
 func (c Client) ListAccounts(ctx context.Context) ([]uuid.UUID, error) {
 	resp := &AccountsResponse{}
-	err := c.Get(ctx, UpBaseUrl+"accounts", resp)
+	err := c.Get(ctx, c.baseUrl+"accounts", resp)
 	accounts := make([]uuid.UUID, 0, len(resp.Data))
 	if err != nil {
 		return accounts, err

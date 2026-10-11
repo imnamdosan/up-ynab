@@ -12,14 +12,24 @@ import (
 const YnabBaseUrl = "https://api.ynab.com/v1/"
 
 type Client struct {
-	token string
-	http  *http.Client
+	token   string
+	http    *http.Client
+	baseUrl string
 }
 
 func NewClient(token string, httpClient *http.Client) Client {
 	return Client{
-		token: token,
-		http:  httpClient,
+		token:   token,
+		http:    httpClient,
+		baseUrl: YnabBaseUrl,
+	}
+}
+
+func NewClientWithBaseUrl(token string, httpClient *http.Client, baseUrl string) Client {
+	return Client{
+		token:   token,
+		http:    httpClient,
+		baseUrl: baseUrl,
 	}
 }
 
@@ -47,7 +57,7 @@ func (c Client) Get(ctx context.Context, url string, result any) error {
 
 func (c Client) ListPlans(ctx context.Context) ([]uuid.UUID, error) {
 	var response PlansResponse
-	if err := c.Get(ctx, YnabBaseUrl+"plans", &response); err != nil {
+	if err := c.Get(ctx, c.baseUrl+"plans", &response); err != nil {
 		return nil, err
 	}
 	plans := make([]uuid.UUID, 0, len(response.Data.Plans))
@@ -59,7 +69,7 @@ func (c Client) ListPlans(ctx context.Context) ([]uuid.UUID, error) {
 
 func (c Client) ListAccounts(ctx context.Context, planID uuid.UUID) ([]uuid.UUID, error) {
 	var response AccountsResponse
-	if err := c.Get(ctx, YnabBaseUrl+"plans/"+planID.String()+"/accounts", &response); err != nil {
+	if err := c.Get(ctx, c.baseUrl+"plans/"+planID.String()+"/accounts", &response); err != nil {
 		return nil, err
 	}
 	accounts := make([]uuid.UUID, 0, len(response.Data.Accounts))
