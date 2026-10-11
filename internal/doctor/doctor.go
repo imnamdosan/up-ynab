@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/bytedance/gg/gslice"
+	"github.com/google/uuid"
 )
 
 func Run(ctx context.Context, cfg config.Config, out io.Writer) error {
@@ -46,5 +47,8 @@ func Run(ctx context.Context, cfg config.Config, out io.Writer) error {
 	if !gslice.Contains(ynabAccounts, cfg.YnabAccountId) {
 		return fmt.Errorf("YNAB_ACCOUNT_ID %s was not found in plan %s", cfg.YnabAccountId, cfg.YnabPlanId)
 	}
+
+	transaction, err := upClient.GetTransaction(ctx, uuid.New())
+	fmt.Fprintf(out, "Up Transaction: %+v", transaction)
 	return nil
 }

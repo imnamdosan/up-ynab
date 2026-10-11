@@ -68,3 +68,16 @@ func (c Client) ListAccounts(ctx context.Context) ([]uuid.UUID, error) {
 	}
 	return accounts, nil
 }
+
+func (c Client) GetTransaction(ctx context.Context, transactionID uuid.UUID) (Transaction, error) {
+	resp := &TransactionsResponse{}
+	err := c.Get(ctx, c.baseUrl+"transactions/"+transactionID.String(), resp)
+	if err != nil {
+		return Transaction{}, err
+	}
+	transaction, err := resp.toTransaction()
+	if err != nil {
+		return Transaction{}, err
+	}
+	return transaction, nil
+}
